@@ -13,11 +13,14 @@
 // specific language governing permissions and limitations under the License.
 
 
+#include <dlib/hash.h>
 #include <dmsdk/dlib/buffer.h>
 
 #include <dlib/log.h>
 #include <dlib/memory.h>
 #include <dlib/math.h>
+#include <dmsdk/dlib/vmath.h> // for Point3
+#include <dlib/array.h>
 
 #include <string.h>
 #include <assert.h>
@@ -49,13 +52,24 @@ namespace dmBuffer
             uint8_t     m_ValueCount;
         };
 
+        struct MetaData
+        {
+            dmhash_t    m_Name;
+            uint8_t     m_ValueType;
+            uint8_t     m_ValueCount;
+            void*       m_Data;
+        };
+
         void*    m_Data;            // All stream data, including guard bytes after each stream and 16 byte aligned.
         Stream*  m_Streams;
+        dmArray<MetaData*> m_MetaDataArray;
         uint32_t m_Stride;          // The struct size (in bytes)
         uint32_t m_Count;           // The number of "structs" in the buffer (e.g. vertex count)
         uint16_t m_Version;
         uint16_t m_ContentVersion;  // A running number, which user can use to signal content changes
         uint8_t  m_NumStreams;
+
+
     };
 
     struct BufferContext
@@ -151,6 +165,16 @@ namespace dmBuffer
         return version << 16 | index;
     }
 
+    static void FreeMetadata(Buffer* buffer) {
+
+        for (uint32_t i=0; i<buffer->m_MetaDataArray.Size(); i++) {
+            Buffer::MetaData* metadata = buffer->m_MetaDataArray[i];
+            free(metadata->m_Data);
+            free(metadata);
+        }
+        buffer->m_MetaDataArray.SetSize(0);
+    }
+
     static void FreeBuffer(BufferContext* ctx, HBuffer hbuffer)
     {
         uint16_t version = hbuffer >> 16;
@@ -160,6 +184,8 @@ namespace dmBuffer
             dmLogError("Stale buffer handle when freeing buffer");
             return;
         }
+        FreeMetadata(b);
+
         ctx->m_Buffers[hbuffer & 0xffff] = 0;
         dmMemory::AlignedFree(b);
     }
@@ -616,4 +642,71 @@ namespace dmBuffer
         buffer->m_ContentVersion++;
         return RESULT_OK;
     }
+
+    // Returns a pointer to the metadata item or 0 if not found.  Assumes buffer is valid.
+    static Buffer::MetaData* FindMetaDataItem(Buffer* buffer, dmhash_t name_hash) {
+        dmArray<Buffer::MetaData*>& arr = buffer->m_MetaDataArray;
+        for (uint32_t  i=0; i<arr.Size(); i++) {
+            if (arr[i]->m_Name == name_hash) {
+                return arr[i];
+            }
+        }
+        return 0; // nothing found
+    }
+
+
+    Result GetMetaData(HBuffer hbuffer, dmhash_t name_hash, void** data, uint32_t* count, ValueType* type) {
+        Buffer* buffer = GetBuffer(g_BufferContext, hbuffer);
+        if (!buffer) {
+            return RESULT_BUFFER_INVALID;
+        }
+
+        Buffer::MetaData* item = FindMetaDataItem(buffer, name_hash);
+        if (!item) {
+            return RESULT_METADATA_NOT_EXIST;
+        }
+
+        *count = item->m_ValueCount;
+        *type = (ValueType)item->m_ValueType; // assumes item->m_ValueType is properly initialized when setting the metadata
+        *data = item->m_Data;
+
+        return RESULT_OK;
+    }
+
+    Result SetMetaData(HBuffer hbuffer, dmhash_t name_hash, const void* data, uint32_t count, ValueType type) {
+        Buffer* buffer = GetBuffer(g_BufferContext, hbuffer);
+        if (!buffer) {
+            return RESULT_BUFFER_INVALID;
+        }
+        if (count == 0) {
+            return RESULT_METADATA_INVALID;
+        }
+
+        Buffer::MetaData* item = FindMetaDataItem(buffer, name_hash);
+        uint32_t values_block_size = GetSizeForValueType(type)*count; // do this once
+        if (item) {
+            // make sure the type and value count is right
+            if (item->m_ValueCount != count || item->m_ValueType != type) {
+                return RESULT_METADATA_INVALID;
+            }
+            memcpy(item->m_Data, data, values_block_size);
+            return RESULT_OK;
+        } else {
+            dmArray<Buffer::MetaData*>& metadata_items = buffer->m_MetaDataArray;
+            if (metadata_items.Full()) {
+                metadata_items.OffsetCapacity(2);
+            }
+            // assume OffsetCapacity(2) worked
+            item = (Buffer::MetaData*) malloc(sizeof(Buffer::MetaData));
+            item->m_Name = name_hash;
+            item->m_ValueCount = count; // no restriction in max number of values
+            item->m_ValueType = type; // no validation, all ValueTypes do
+            item->m_Data = malloc(values_block_size);
+            memcpy(item->m_Data, data, values_block_size);
+            metadata_items.Push(item);
+        }
+
+        return RESULT_OK;
+    }
+
 }
