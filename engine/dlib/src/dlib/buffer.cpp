@@ -167,6 +167,8 @@ namespace dmBuffer
 
     static void FreeMetadata(Buffer* buffer) {
 
+        uint32_t count = buffer->m_MetaDataArray.Size();
+
         for (uint32_t i=0; i<buffer->m_MetaDataArray.Size(); i++) {
             Buffer::MetaData* metadata = buffer->m_MetaDataArray[i];
             free(metadata->m_Data);
@@ -265,6 +267,8 @@ namespace dmBuffer
             _TOSTRING(RESULT_STREAM_MISSING)
             _TOSTRING(RESULT_STREAM_TYPE_MISMATCH)
             _TOSTRING(RESULT_STREAM_COUNT_MISMATCH)
+            _TOSTRING(RESULT_METADATA_INVALID)
+            _TOSTRING(RESULT_METADATA_NOT_EXIST)
             default: return "buffer.cpp: Unknown result";
         }
 
@@ -423,6 +427,7 @@ namespace dmBuffer
         buffer->m_Data = (void*)((uintptr_t)data_block + header_size);
         buffer->m_Stride = struct_size;
         buffer->m_ContentVersion = 0;
+        buffer->m_MetaDataArray.SetSize(0);
 
         CreateStreamsInterleaved(buffer, streams_decl, offsets);
 
