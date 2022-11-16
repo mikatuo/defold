@@ -949,6 +949,27 @@ namespace dmGameSystem
                     case dmBuffer::VALUE_TYPE_UINT8:
                         values = (void*) luaTableToArray<uint8_t>(L, count, valueType);
                     break;
+                    case dmBuffer::VALUE_TYPE_UINT16:
+                        values = (void*) luaTableToArray<uint16_t>(L, count, valueType);
+                    break;
+                    case dmBuffer::VALUE_TYPE_UINT32:
+                        values = (void*) luaTableToArray<uint32_t>(L, count, valueType);
+                    break;
+                    case dmBuffer::VALUE_TYPE_UINT64:
+                        values = (void*) luaTableToArray<uint64_t>(L, count, valueType);
+                    break;
+                    case dmBuffer::VALUE_TYPE_INT8:
+                        values = (void*) luaTableToArray<int8_t>(L, count, valueType);
+                    break;
+                    case dmBuffer::VALUE_TYPE_INT16:
+                        values = (void*) luaTableToArray<int16_t>(L, count, valueType);
+                    break;
+                    case dmBuffer::VALUE_TYPE_INT32:
+                        values = (void*) luaTableToArray<int32_t>(L, count, valueType);
+                    break;
+                    case dmBuffer::VALUE_TYPE_INT64:
+                        values = (void*) luaTableToArray<int64_t>(L, count, valueType);
+                    break;
                     default:
                         return DM_LUA_ERROR("%s.%s invalid value type supplied: %ld.", SCRIPT_LIB_NAME, SCRIPT_TYPE_NAME_BUFFERSTREAM, valueTypeRaw);
                 }
@@ -1016,6 +1037,30 @@ namespace dmGameSystem
                 break;
                 case dmBuffer::VALUE_TYPE_UINT8:
                     arrayToLuaTable<uint8_t>(L, (uint8_t*) values, count, valueType);
+                break;
+                case dmBuffer::VALUE_TYPE_UINT16:
+                    arrayToLuaTable<uint8_t>(L, (uint16_t*) values, count, valueType);
+                break;
+                case dmBuffer::VALUE_TYPE_UINT32:
+                    arrayToLuaTable<uint8_t>(L, (uint32_t*) values, count, valueType);
+                break;
+                case dmBuffer::VALUE_TYPE_UINT64:
+                    arrayToLuaTable<uint8_t>(L, (uint64_t*) values, count, valueType);
+                break;
+                case dmBuffer::VALUE_TYPE_UINT8:
+                    arrayToLuaTable<uint8_t>(L, (uint8_t*) values, count, valueType);
+                break;
+                case dmBuffer::VALUE_TYPE_INT8:
+                    arrayToLuaTable<uint8_t>(L, (int8_t*) values, count, valueType);
+                break;
+                case dmBuffer::VALUE_TYPE_INT16:
+                    arrayToLuaTable<uint8_t>(L, (int16_t*) values, count, valueType);
+                break;
+                case dmBuffer::VALUE_TYPE_INT32:
+                    arrayToLuaTable<uint8_t>(L, (int32_t*) values, count, valueType);
+                break;
+                case dmBuffer::VALUE_TYPE_INT64:
+                    arrayToLuaTable<uint8_t>(L, (int64_t*) values, count, valueType);
                 break;
                 default:
                     // we shouldn't reach this point

@@ -427,7 +427,7 @@ namespace dmBuffer
         buffer->m_Data = (void*)((uintptr_t)data_block + header_size);
         buffer->m_Stride = struct_size;
         buffer->m_ContentVersion = 0;
-        buffer->m_MetaDataArray.SetSize(0);
+        memset(&buffer->m_MetaDataArray,0x0, sizeof(buffer->m_MetaDataArray)); // We're simulating the dmArray() constructor operation. Note, m_MetaDataArray is not constructed at all since memory allocation was done by AlignedMalloc above.
 
         CreateStreamsInterleaved(buffer, streams_decl, offsets);
 
