@@ -896,8 +896,8 @@ namespace dmGameSystem
                 i++;
                 lua_pop(L, 1); // pop value
             }
-        } else
-        if (valueType == dmBuffer::VALUE_TYPE_FLOAT32) {
+        } else {
+            // array of ints
             while (lua_next(L, -2) != 0) {
                 buffer[i] = luaL_checkinteger(L, -1);
                 int key = (int) luaL_checknumber(L, -2); // TODO - index of the value. Shall we validate it ?
@@ -966,25 +966,32 @@ namespace dmGameSystem
         return 0;
     }
 
-
-    // takes an array of arithmetic values and pushes them to a lua table in the stack
-    /*
-    static void pushValues(lua_State* L, float* values, uint32_t count, dmBuffer::ValueType type) {
-        lua_newtable(L);
-        for (uint32_t i=0; i<count; i++) {
-
-            lua_pushnumber(L,
+    // copies values from array to lua table on top of the stack
+    template <typename T>
+    static void arrayToLuaTable(lua_State* L, const T* values, uint32_t count, dmBuffer::ValueType valueType) {
+        // assume result table (empty) is at the top of the stack
+        if (valueType == dmBuffer::VALUE_TYPE_FLOAT32) {
+            for (uint32_t i=0; i<count; i++) {
+                T value = values[i];
+                lua_pushnumber(L, value);
+                lua_rawseti(L, -2, i+1); // lua indices start from 1
+            }
+        } else {
+            for (uint32_t i=0; i<count; i++) {
+                T value = values[i];
+                lua_pushinteger(L, value);
+                lua_rawseti(L, -2, i+1); // lua indices start from 1
+            }
         }
     }
-    */
 
-    // local metadata = buffer.get_metadata(self.new_buffer, "aabb")
+    // local metadata, numbertype  = buffer.get_metadata(self.new_buffer, "aabb")
     static int GetMetadata(lua_State* L)
     {
-        DM_LUA_STACK_CHECK(L, 0);
+        DM_LUA_STACK_CHECK(L, 2); // expected to return a table of value and the value type
         int top = lua_gettop(L);
 
-        if (top >= 2 && !lua_isnil(L,3)) // table with args
+        if (top == 2) // table with args
         {
             // get buffer
             dmScript::LuaHBuffer* buffer = dmScript::CheckBuffer(L, 1);
@@ -994,21 +1001,33 @@ namespace dmGameSystem
             dmhash_t entry_name = dmScript::CheckHashOrString(L, 2);
 
             uint32_t count;
-            ValueType* type;
+            dmBuffer::ValueType valueType;
             void* values;
-            dmBuffer::Result r = dmBuffer::GetMetaData(hbuffer, entry_name, &values, &count, &type);
+            dmBuffer::Result r = dmBuffer::GetMetaData(hbuffer, entry_name, &values, &count, &valueType);
             if ( r != dmBuffer::RESULT_OK )
             {
                 return DM_LUA_ERROR("buffer.get_metadata: Error getting metadata for buffer: %s", dmBuffer::GetResultString(r));
             }
 
             lua_newtable(L);
-            for (uint32_t i=0; i < count; i++) {
-                lua_pushnumber(L,
-
+            switch (valueType) {
+                case dmBuffer::VALUE_TYPE_FLOAT32:
+                    arrayToLuaTable<float>(L, (float*) values, count, valueType);
+                break;
+                case dmBuffer::VALUE_TYPE_UINT8:
+                    arrayToLuaTable<uint8_t>(L, (uint8_t*) values, count, valueType);
+                break;
+                default:
+                    // we shouldn't reach this point
+                    return DM_LUA_ERROR("invalid value type supplied: %d.", valueType);
             }
+            lua_pushinteger(L, (uint32_t) valueType);
 
-        }
+            return 2; // table with values and valueType returned in the stack
+
+
+        } else
+            DM_LUA_ERROR("invalid number of arguments. Expected %d", 2);
 
         return 0;
     }
@@ -1038,7 +1057,7 @@ namespace dmGameSystem
         {"copy_stream", CopyStream},
         {"copy_buffer", CopyBuffer},
         {"set_metadata",SetMetadata},
-        //{"get_metadata",GetMetadata},
+        {"get_metadata",GetMetadata},
         {0, 0}
     };
 
