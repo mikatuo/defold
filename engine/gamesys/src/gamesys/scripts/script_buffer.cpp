@@ -1039,28 +1039,25 @@ namespace dmGameSystem
                     arrayToLuaTable<uint8_t>(L, (uint8_t*) values, count, valueType);
                 break;
                 case dmBuffer::VALUE_TYPE_UINT16:
-                    arrayToLuaTable<uint8_t>(L, (uint16_t*) values, count, valueType);
+                    arrayToLuaTable<uint16_t>(L, (uint16_t*) values, count, valueType);
                 break;
                 case dmBuffer::VALUE_TYPE_UINT32:
-                    arrayToLuaTable<uint8_t>(L, (uint32_t*) values, count, valueType);
+                    arrayToLuaTable<uint32_t>(L, (uint32_t*) values, count, valueType);
                 break;
                 case dmBuffer::VALUE_TYPE_UINT64:
-                    arrayToLuaTable<uint8_t>(L, (uint64_t*) values, count, valueType);
-                break;
-                case dmBuffer::VALUE_TYPE_UINT8:
-                    arrayToLuaTable<uint8_t>(L, (uint8_t*) values, count, valueType);
+                    arrayToLuaTable<uint64_t>(L, (uint64_t*) values, count, valueType);
                 break;
                 case dmBuffer::VALUE_TYPE_INT8:
-                    arrayToLuaTable<uint8_t>(L, (int8_t*) values, count, valueType);
+                    arrayToLuaTable<int8_t>(L, (int8_t*) values, count, valueType);
                 break;
                 case dmBuffer::VALUE_TYPE_INT16:
-                    arrayToLuaTable<uint8_t>(L, (int16_t*) values, count, valueType);
+                    arrayToLuaTable<int16_t>(L, (int16_t*) values, count, valueType);
                 break;
                 case dmBuffer::VALUE_TYPE_INT32:
-                    arrayToLuaTable<uint8_t>(L, (int32_t*) values, count, valueType);
+                    arrayToLuaTable<int32_t>(L, (int32_t*) values, count, valueType);
                 break;
                 case dmBuffer::VALUE_TYPE_INT64:
-                    arrayToLuaTable<uint8_t>(L, (int64_t*) values, count, valueType);
+                    arrayToLuaTable<int64_t>(L, (int64_t*) values, count, valueType);
                 break;
                 default:
                     // we shouldn't reach this point

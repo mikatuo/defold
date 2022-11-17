@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include <new>  // for placement new dmArray(MetaData)
 
 #if defined(_WIN32)
 #include <malloc.h>
@@ -187,6 +188,7 @@ namespace dmBuffer
             return;
         }
         FreeMetadata(b);
+        b->m_MetaDataArray.~dmArray(); // b->m_MetaDataArray was initialized with "placement new" operator. We have to destroy it manually
 
         ctx->m_Buffers[hbuffer & 0xffff] = 0;
         dmMemory::AlignedFree(b);
@@ -427,7 +429,7 @@ namespace dmBuffer
         buffer->m_Data = (void*)((uintptr_t)data_block + header_size);
         buffer->m_Stride = struct_size;
         buffer->m_ContentVersion = 0;
-        memset(&buffer->m_MetaDataArray,0x0, sizeof(buffer->m_MetaDataArray)); // We're simulating the dmArray() constructor operation. Note, m_MetaDataArray is not constructed at all since memory allocation was done by AlignedMalloc above.
+        new (&buffer->m_MetaDataArray) dmArray<Buffer::MetaData*>();
 
         CreateStreamsInterleaved(buffer, streams_decl, offsets);
 
