@@ -464,6 +464,31 @@ static dmGameObject::PropertyResult SetResourceProperty(dmGameObject::HInstance 
     return dmGameObject::SetProperty(instance, comp_name, prop_name, opt, prop_var);
 }
 
+TEST_F(BufferMetadataTest, Test1)
+{
+    // import 'resource' lua api among others
+    dmGameSystem::ScriptLibContext scriptlibcontext;
+    scriptlibcontext.m_Factory = m_Factory;
+    scriptlibcontext.m_Register = m_Register;
+    scriptlibcontext.m_LuaState = dmScript::GetLuaState(m_ScriptContext);
+    dmGameSystem::InitializeScriptLibs(scriptlibcontext);
+
+    // Since the script uses "io.open()" we want to override the path
+    //WrapIoFunctions(scriptlibcontext.m_LuaState);
+
+    const char* go_path = "/buffer/metadata.goc";
+
+    // Create gameobject
+    dmGameObject::HInstance go = Spawn(m_Factory, m_Collection, go_path, dmHashString64("/go"));
+    ASSERT_NE((void*)0, go);
+
+    // release GO
+    DeleteInstance(m_Collection, go);
+
+    // release lua api deps
+    dmGameSystem::FinalizeScriptLibs(scriptlibcontext);
+}
+
 TEST_F(SoundTest, UpdateSoundResource)
 {
     // import 'resource' lua api among others
@@ -3290,6 +3315,9 @@ TEST_F(RenderConstantsTest, HashRenderConstants)
 
 int main(int argc, char **argv)
 {
+    dmLog::LogParams params;
+    dmLog::LogInitialize(&params);
+
     dmHashEnableReverseHash(true);
     // Enable message descriptor translation when sending messages
     dmDDF::RegisterAllTypes();
